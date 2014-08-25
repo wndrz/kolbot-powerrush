@@ -12,7 +12,7 @@
 
 var PowerRush = {
   Rushers: ["Rivvy", "Najka", "rivhammer"], // array of valid rusher names, case sensitive
-  RusheeCount: 3, // number of rushees to wait for
+  RusheeCount: 1, // number of rushees to wait for
   RusheeLeader: "RushLeader", // profile of the player that will do the quests, case sensitive
   Bumper: null, // bumper name; null for wsk walk
   RushMode: "fullwps", // quick, full, wps, fullwps
