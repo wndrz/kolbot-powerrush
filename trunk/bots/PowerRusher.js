@@ -7,6 +7,10 @@
 include("PowerRush.js");
 
 PowerRush.rusher = function() {
+  this.makePortal = function() {
+    Pather.makePortal();
+    delay(250);
+  };
   this.useWaypoint = function(area) {
     if (me.area == area || Pather.useWaypoint(area, true))
       return true;
@@ -52,7 +56,7 @@ PowerRush.rusher = function() {
       if (!this.useWaypoint(list[i]))
         return false;
       var wp = getUnit(2, "waypoint");
-      if (wp && Pather.makePortal()) {
+      if (wp && this.makePortal()) {
         say(this.Phrases.WaypointEnter);
         while (this.playersIn() < this.rusheeCount())
           Attack.securePosition(wp.x, wp.y, 15, 250, true);
@@ -158,7 +162,7 @@ PowerRush.rusher = function() {
 
     if (!Pather.moveToExit([36, 37], true) || !Pather.moveTo(22582, 9612))
       return false;
-    Pather.makePortal();
+    this.makePortal();
     Attack.securePosition(me.x, me.y, 40, 3000, true);
     say(this.Phrases.AndarielEnter);
     while (!this.playersIn())
@@ -191,7 +195,7 @@ PowerRush.rusher = function() {
       return false;
     if (!this.clearAround(229, getPresetUnit(49, 2, 355), 30, 10, 2000))
       return false;
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.RadamentEnter);
     this.waitAndClear(229, 10);
     Pather.moveToPreset(me.area, 2, 355);
@@ -205,7 +209,7 @@ PowerRush.rusher = function() {
     }
     var book = getUnit(4, 552, 3);
     if (book) Pather.moveToUnit(book);
-    Pather.makePortal();
+    this.makePortal();
     var position = {x: me.x, y: me.y};
     say(this.Phrases.RadamentBookEnter);
     while (this.playersIn() < this.rusheeCount())
@@ -224,7 +228,7 @@ PowerRush.rusher = function() {
     if (!Pather.moveToExit(60, true) || !Pather.moveToPreset(me.area, 2, 354))
       return false;
 
-    Pather.makePortal();
+    this.makePortal();
     
     Attack.securePosition(me.x, me.y, 25, 2000, true);
     say(this.Phrases.CubeEnter);
@@ -243,7 +247,7 @@ PowerRush.rusher = function() {
 
     if (!Pather.moveToExit([45, 58, 61], true) || !Pather.moveTo(15044, 14045))
       return false;
-    Pather.makePortal();
+    this.makePortal();
     Attack.clear(25);
     say(this.Phrases.AmuletEnter);
     while (!this.playersIn()) {
@@ -265,7 +269,7 @@ PowerRush.rusher = function() {
     if (!Pather.moveToExit([62, 63, 64], true) || !Pather.moveToPreset(me.area, 2, 356))
       return false;
     var spot = {x: me.x, y: me.y};
-    Pather.makePortal();
+    this.makePortal();
     Attack.clear(25);
     say(this.Phrases.StaffEnter);
     while (!this.playersIn()) {
@@ -307,7 +311,7 @@ PowerRush.rusher = function() {
     if (!Pather.moveToUnit(spot))
       return false;
 
-    Pather.makePortal();
+    this.makePortal();
     Attack.clear(25);
     say(this.Phrases.SummonerEnter);
     while (!this.playersIn()) {
@@ -341,7 +345,7 @@ PowerRush.rusher = function() {
     if (!Pather.moveToExit(getRoom().correcttomb, true) || !Pather.moveToPreset(me.area, 2, 152))
       return false;
 
-    Pather.makePortal();
+    this.makePortal();
     Attack.securePosition(me.x, me.y, 30, 2000, true, true);
     say(this.Phrases.DurielEnter);
     while (!this.playersIn()) {
@@ -359,7 +363,7 @@ PowerRush.rusher = function() {
     Pather.teleport = true;
     Pather.moveTo(22577, 15649, 10);
     Pather.moveTo(22577, 15609, 10);
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.DurielDead);
     while (!this.playersIn())
       delay(250);
@@ -373,7 +377,7 @@ PowerRush.rusher = function() {
     Pather.moveTo(10022, 5046);
     while (this.playersInArea(73))
       delay(250);
-    Pather.makePortal();
+    this.makePortal();
     delay(250);
     say(this.Phrases.JerhynPortal);
     if (!Pather.usePortal(null, me.name))
@@ -400,7 +404,7 @@ PowerRush.rusher = function() {
       return false;
 
     var spot = {x: me.x, y: me.y};
-    Pather.makePortal();
+    this.makePortal();
     Attack.clear(25);
     say(this.Phrases.TomeEnter);
     while (!this.playersIn()) {
@@ -436,7 +440,7 @@ PowerRush.rusher = function() {
     var coords = [me.x, me.y];
 
     Pather.moveTo(coords[0] + 81, coords[1] - 135);
-    Pather.makePortal();
+    this.makePortal();
     Attack.clear(25);
     say(this.Phrases.TravincalEnter);
     while (!this.playersIn()) {
@@ -487,7 +491,7 @@ PowerRush.rusher = function() {
       Attack.clearList(monsterList);
     }
     Pather.moveTo(17591, 8070);
-    Pather.makePortal();
+    this.makePortal();
     monster = getUnit(1, "hydra");
     if (monster) {
       do {
@@ -525,7 +529,7 @@ PowerRush.rusher = function() {
       return false;
     if (!this.clearAround(256, getPresetUnit(105, 1, 256), 50, 20, 2000))
       return false;
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.IzualEnter);
     this.waitAndClear(256, 20);
     Pather.moveToPreset(105, 1, 256);
@@ -634,7 +638,7 @@ PowerRush.rusher = function() {
       throw new Error("Failed to kill Infector");
 
     Pather.moveTo(7763, 5267);
-    Pather.makePortal();
+    this.makePortal();
     Pather.moveTo(7727, 5267);
     say(this.Phrases.DiabloEnter);
     while (!this.playersIn())
@@ -671,7 +675,7 @@ PowerRush.rusher = function() {
 
     Pather.moveTo(3850, 5097);
     Attack.clear(25);
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.ShenkEnter);
     while (!this.playersIn()) {
       Pather.moveTo(3850, 5097);
@@ -703,7 +707,7 @@ PowerRush.rusher = function() {
     delay(300);
     me.cancel();
     me.cancel();
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.AnyaEnter);
     while (!this.playersIn()) {
       Pather.moveToUnit(anya);
@@ -725,7 +729,7 @@ PowerRush.rusher = function() {
       return false;
 
     Pather.moveTo(10057, 12645);
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.AncientsEnter);
 
     while (!this.playersIn())
@@ -743,7 +747,7 @@ PowerRush.rusher = function() {
 
     Attack.clear(50); // additional check for immunities?
     Pather.moveTo(10057, 12645);
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.AncientsLeave);
 
     if (this.Bumper) {
@@ -926,7 +930,7 @@ PowerRush.rusher = function() {
     Attack.clear(15);
     clearThrone();
     Pather.moveTo(15092, 5011);
-    Pather.makePortal();
+    this.makePortal();
 
     var tick = getTickCount();
     var cleared5 = false;
@@ -1011,7 +1015,7 @@ PowerRush.rusher = function() {
       Pather.usePortal(null, null, portal);
     else
       throw new Error("Couldn't find portal.");
-    Pather.makePortal();
+    this.makePortal();
     say(this.Phrases.BaalEnter);
     while (!this.playersIn())
       delay(250);
