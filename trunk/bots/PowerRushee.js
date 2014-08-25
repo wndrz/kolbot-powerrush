@@ -294,12 +294,16 @@ PowerRush.rushee = function() {
           throw new Error("Failed to take rusher's portal");
         var staff = me.getItem(91);
         var orifice = getUnit(2, 152);
-        if (!staff)
-          throw new Error("Staff not found");
+        if (!staff) {
+          D2Bot.printToConsole("Staff not found, let's hope the door is already open");
+          break;
+        }
         if (!orifice)
           throw new Error("Orifice not found");
-        if (Misc.openChest(orifice) && staff.toCursor() && submitItem())
-          break;
+        if (Misc.openChest(orifice) && staff.toCursor()) {
+          if (submitItem())
+            break;
+        }
         if (me.mode == 17) {
           D2Bot.printToConsole("Died while opening Duriel's chamber, trying again");
           me.revive();
@@ -313,6 +317,11 @@ PowerRush.rushee = function() {
       delay(750 + me.ping);
       if (!this.toTown())
         throw new Error("Failed to return to town");
+      if (me.itemoncursor) {
+        Cubing.openCube();
+        delay(500);
+        me.cancel();
+      }
 
       this.waitForChat(this.Phrases.DurielDead);
       if (!Pather.usePortal(null, this.rusher))
@@ -386,7 +395,7 @@ PowerRush.rushee = function() {
     } else {
       if (this.waitForChat(this.Phrases.BirdStart)) {
         Town.goToTown(3);
-        Pather.move(5083, 5008);
+        Pather.moveTo(5083, 5008);
         if (this.waitForChat(this.Phrases.BirdEnd)) {
           this.talkTo(NPC.Alkor);
           this.useItem(545);
@@ -467,6 +476,8 @@ PowerRush.rushee = function() {
       this.waitForChat(this.Phrases.DiabloEnter);
       if (!Pather.usePortal(null, this.rusher))
         throw new Error("Failed to take rusher's portal");
+      delay(500);
+      Pather.moveTo(7763, 5267);
       this.waitForChat(this.Phrases.DiabloLeave);
       if (!this.toTown())
         throw new Error("Failed to return to town");

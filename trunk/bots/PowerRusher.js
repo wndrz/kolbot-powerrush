@@ -8,8 +8,9 @@ include("PowerRush.js");
 
 PowerRush.rusher = function() {
   this.makePortal = function() {
-    Pather.makePortal();
+    if (!Pather.makePortal()) return false;
     delay(250);
+    return true;
   };
   this.useWaypoint = function(area) {
     if (me.area == area || Pather.useWaypoint(area, true))
@@ -348,7 +349,7 @@ PowerRush.rusher = function() {
     this.makePortal();
     Attack.securePosition(me.x, me.y, 30, 2000, true, true);
     say(this.Phrases.DurielEnter);
-    while (!this.playersIn()) {
+    while (!this.playersIn() && !getUnit(2, 100)) {
       Pather.moveToPreset(me.area, 2, 152, 0, -5);
       Attack.clear(15);
       delay(250);
@@ -745,7 +746,11 @@ PowerRush.rusher = function() {
     while (!getUnit(1, 542))
       delay(250);
 
-    Attack.clear(50); // additional check for immunities?
+    var statue = getUnit(2, 474);
+    while (statue.mode != 2) {
+      Attack.clear(50);
+      delay(500);
+    }
     Pather.moveTo(10057, 12645);
     this.makePortal();
     say(this.Phrases.AncientsLeave);
