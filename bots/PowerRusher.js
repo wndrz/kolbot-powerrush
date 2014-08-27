@@ -36,6 +36,18 @@ PowerRush.rusher = function() {
     }
     return count;
   };
+  this.playersInOrDead = function() {
+    if (this.playersIn(me.area))
+      return true;
+    var corpse = getUnit(0, -1, 17);
+    if (corpse) {
+      do {
+        if (getDistance(me, corpse) < 10)
+          return true;
+      } while (corpse.getNext());
+    }
+    return false;
+  };
   this.playersInArea = function(area) {
     var party = getParty();
     var count = 0;
@@ -59,8 +71,10 @@ PowerRush.rusher = function() {
       var wp = getUnit(2, "waypoint");
       if (wp && this.makePortal()) {
         say(this.Phrases.WaypointEnter);
-        while (this.playersIn() < this.rusheeCount())
-          Attack.securePosition(wp.x, wp.y, 15, 250, true);
+        while (this.playersIn() < this.rusheeCount()) {
+          this.secureOnce(wp.x, wp.y, 15);
+          delay(250);
+        }
         say(this.Phrases.WaypointLeave);
         while (this.playersIn())
           delay(250);
@@ -95,10 +109,20 @@ PowerRush.rusher = function() {
     if (monster) {
       do {
         if (Attack.checkMonster(monster) && getDistance(me, monster) < range)
-          return monster;
+          return copyUnit(monster);
       } while (monster.getNext());
     }
     return false;
+  };
+  this.secureOnce = function(x, y, range) {
+    if (getDistance(me.x, me.y, x, y) > 3)
+      Pather.moveTo(x, y);
+    Attack.clear(range);
+  };
+  this.secure = function(x, y, range, minRange) {
+    if (!minRange) minRange = range;
+    for (var i = 0; i < 10 && this.nearbyMonster(minRange); i++)
+      this.secureOnce(x, y, range);
   };
   this.clearAround = function(id, preset, targetDistance, clearRange, clearTime) {
     if (!preset)
@@ -164,10 +188,12 @@ PowerRush.rusher = function() {
     if (!Pather.moveToExit([36, 37], true) || !Pather.moveTo(22582, 9612))
       return false;
     this.makePortal();
-    Attack.securePosition(me.x, me.y, 40, 3000, true);
+    Attack.clear(40);
     say(this.Phrases.AndarielEnter);
-    while (!this.playersIn())
-      Attack.securePosition(22582, 9612, 40, 250, true);
+    while (!this.playersIn()) {
+      this.secureOnce(22582, 9612, 25);
+      delay(250);
+    }
     Attack.kill(156);
     say(this.Phrases.AndarielLeave);
     while (this.playersIn())
@@ -206,18 +232,23 @@ PowerRush.rusher = function() {
     while (this.playersIn()) {
       var book = getUnit(4, 552, 3);
       if (!book) book = me;
-      Attack.securePosition(book.x, book.y, 25, 250, true);
+      this.secureOnce(book.x, book.y, 25);
+      delay(250);
     }
     var book = getUnit(4, 552, 3);
     if (book) Pather.moveToUnit(book);
     this.makePortal();
     var position = {x: me.x, y: me.y};
     say(this.Phrases.RadamentBookEnter);
-    while (this.playersIn() < this.rusheeCount())
-      Attack.securePosition(position.x, position.y, 25, 250, true);
-    say(this.Phrases.RadamentBookLeave);
-    while (this.playersIn())
+    while (this.playersIn() < this.rusheeCount()) {
+      this.secureOnce(position.x, position.y, 20);
       delay(250);
+    }
+    say(this.Phrases.RadamentBookLeave);
+    while (this.playersInOrDead()) {
+      this.secureOnce(position.x, position.y, 20);
+      delay(250);
+    }
     return this.backToTown();
   };
 
@@ -230,14 +261,19 @@ PowerRush.rusher = function() {
       return false;
 
     this.makePortal();
-    
-    Attack.securePosition(me.x, me.y, 25, 2000, true);
+
+    var spot = {x: me.x, y: me.y};
+    this.secure(spot.x, spot.y, 35);
     say(this.Phrases.CubeEnter);
-    while (this.playersIn() < this.rusheeCount())
-      Attack.securePosition(me.x, me.y, 25, 250, true);
-    say(this.Phrases.CubeLeave);
-    while (this.playersIn())
+    while (this.playersIn() < this.rusheeCount()) {
+      this.secureOnce(spot.x, spot.y, 25);
       delay(250);
+    }
+    say(this.Phrases.CubeLeave);
+    while (this.playersInOrDead()) {
+      this.secureOnce(spot.x, spot.y, 25);
+      delay(250);
+    }
     return this.backToTown();
   };
 
@@ -249,16 +285,17 @@ PowerRush.rusher = function() {
     if (!Pather.moveToExit([45, 58, 61], true) || !Pather.moveTo(15044, 14045))
       return false;
     this.makePortal();
-    Attack.clear(25);
+    this.secure(me.x, me.y, 35);
     say(this.Phrases.AmuletEnter);
     while (!this.playersIn()) {
-      Pather.moveTo(15044, 14047);
-      Attack.clear(15);
+      this.secureOnce(15044, 14047, 20);
       delay(250);
     }
     say(this.Phrases.AmuletLeave);
-    while (this.playersIn())
+    while (this.playersInOrDead()) {
+      this.secureOnce(15044, 14047, 20);
       delay(250);
+    }
     return this.backToTown();
   };
 
@@ -271,16 +308,17 @@ PowerRush.rusher = function() {
       return false;
     var spot = {x: me.x, y: me.y};
     this.makePortal();
-    Attack.clear(25);
+    this.secure(spot.x, spot.y, 35);
     say(this.Phrases.StaffEnter);
     while (!this.playersIn()) {
-      Pather.moveToUnit(spot);
-      Attack.clear(15);
+      this.secureOnce(spot.x, spot.y, 20);
       delay(250);
     }
     say(this.Phrases.StaffLeave);
-    while (this.playersIn())
+    while (this.playersInOrDead()) {
+      this.secureOnce(spot.x, spot.y, 20);
       delay(250);
+    }
     return this.backToTown();
   };
 
@@ -316,8 +354,7 @@ PowerRush.rusher = function() {
     Attack.clear(25);
     say(this.Phrases.SummonerEnter);
     while (!this.playersIn()) {
-      Pather.moveToUnit(spot);
-      Attack.clear(15);
+      this.secureOnce(spot.x, spot.y, 20);
       delay(250);
     }
     Attack.clear(15, 0, 250);
@@ -347,15 +384,13 @@ PowerRush.rusher = function() {
       return false;
 
     this.makePortal();
-    Attack.securePosition(me.x, me.y, 30, 2000, true, true);
+    var spot = {x: me.x, y: me.y};
+    this.secure(spot.x, spot.y, 35);
     say(this.Phrases.DurielEnter);
-    while (!this.playersIn() && !getUnit(2, 100)) {
-      Pather.moveToPreset(me.area, 2, 152, 0, -5);
-      Attack.clear(15);
+    while (!getUnit(2, 100)) {
+      this.secureOnce(spot.x, spot.y - 5, 15);
       delay(250);
     }
-    while (!getUnit(2, 100))
-      delay(250);
 
     Pather.useUnit(2, 100, 73);
     Attack.kill(211);
@@ -406,24 +441,33 @@ PowerRush.rusher = function() {
 
     var spot = {x: me.x, y: me.y};
     this.makePortal();
-    Attack.clear(25);
+    this.secure(spot.x, spot.y, 30);
+    if (this.questList.indexOf("bird") >= 0) {
+      var jade = getUnit(4, 546, 3);
+      if (jade) Pickit.pickItem(jade);
+    }
     say(this.Phrases.TomeEnter);
     while (!this.playersIn()) {
-      Pather.moveToUnit(spot);
-      Attack.clear(15);
+      this.secureOnce(spot.x, spot.y, 20);
       delay(250);
     }
-    var jade = getUnit(4, 546, 3);
-    if (jade) Pickit.pickItem(jade);
     say(this.Phrases.TomeLeave);
-    while (this.playersIn())
+    while (this.playersInOrDead()) {
+      this.secureOnce(spot.x, spot.y, 20);
       delay(250);
+    }
+    if (this.questList.indexOf("bird") >= 0) {
+      var jade = getUnit(4, 546, 3);
+      if (jade) Pickit.pickItem(jade);
+    }
     if (!this.backToTown())
       return false;
-    jade = me.getItem(546);
-    if (jade) {
-      jade.drop();
-      say(this.Phrases.BirdDrop);
+    if (this.questList.indexOf("bird") >= 0) {
+      var jade = me.getItem(546);
+      if (jade) {
+        jade.drop();
+        say(this.Phrases.BirdDrop);
+      }
     }
     return true;
   };
@@ -445,8 +489,7 @@ PowerRush.rusher = function() {
     Attack.clear(25);
     say(this.Phrases.TravincalEnter);
     while (!this.playersIn()) {
-      Pather.moveTo(coords[0] + 81, coords[1] - 135);
-      Attack.clear(15);
+      this.secureOnce(coords[0] + 81, coords[1] - 135, 15);
       delay(250);
     }
 
@@ -454,8 +497,10 @@ PowerRush.rusher = function() {
     Attack.kill(getLocaleString(2863));
     Attack.kill(getLocaleString(2862));
     Attack.kill(getLocaleString(2860));
-    var jade = getUnit(4, 546, 3);
-    if (jade) Pickit.pickItem(jade);
+    if (this.questList.indexOf("bird") >= 0) {
+      var jade = getUnit(4, 546, 3);
+      if (jade) Pickit.pickItem(jade);
+    }
 
     Pather.moveTo(coords[0] + 81, coords[1] - 135);
     say(this.Phrases.TravincalLeave);
@@ -463,10 +508,12 @@ PowerRush.rusher = function() {
       delay(250);
     if (!this.backToTown())
       return false;
-    jade = me.getItem(546);
-    if (jade) {
-      jade.drop();
-      say(this.Phrases.BirdDrop);
+    if (this.questList.indexOf("bird") >= 0) {
+      var jade = me.getItem(546);
+      if (jade) {
+        jade.drop();
+        say(this.Phrases.BirdDrop);
+      }
     }
     return true;
   };
@@ -483,12 +530,12 @@ PowerRush.rusher = function() {
     var monsterList = [];
     if (monster) {
       do {
-        if (Attack.checkMonster(monster) && getDistance(monster, 17627, 8070) <= 30)
-          monsterList.push(monster);
+        if (Attack.checkMonster(monster) && getDistance(monster, 17617, 8070) <= 30)
+          monsterList.push(copyUnit(monster));
       } while (monster.getNext());
     }
     if (monsterList.length) {
-      Pather.moveTo(17627, 8070);
+      Pather.moveTo(17617, 8070);
       Attack.clearList(monsterList);
     }
     Pather.moveTo(17591, 8070);
@@ -679,8 +726,7 @@ PowerRush.rusher = function() {
     this.makePortal();
     say(this.Phrases.ShenkEnter);
     while (!this.playersIn()) {
-      Pather.moveTo(3850, 5097);
-      Attack.clear(15);
+      this.secureOnce(3850, 5097);
       delay(250);
     }
     Pather.moveTo(3883, 5113);
@@ -699,7 +745,7 @@ PowerRush.rusher = function() {
     if (!Pather.moveToExit(114, true) || !Pather.moveToPreset(me.area, 2, 460))
       return false;
 
-    Attack.clear(20);
+    this.secure(me.x, me.y, 30);
     var anya = getUnit(2, 558);
     Pather.moveToUnit(anya);
     sendPacket(1, 0x13, 4, 2, 4, anya.gid);
@@ -711,13 +757,14 @@ PowerRush.rusher = function() {
     this.makePortal();
     say(this.Phrases.AnyaEnter);
     while (!this.playersIn()) {
-      Pather.moveToUnit(anya);
-      Attack.clear(20);
+      this.secureOnce(anya.x, anya.y, 20);
       delay(250);
     }
     say(this.Phrases.AnyaLeave);
-    while (this.playersIn())
+    while (this.playersInOrDead()) {
+      this.secureOnce(anya.x, anya.y, 20);
       delay(250);
+    }
     return this.backToTown();
   };
 
@@ -792,8 +839,9 @@ PowerRush.rusher = function() {
       var path = getPath(me.area, from.x, from.y, to.x, to.y, 0, 20);
       if (!path) return false;
       for (var i = 0; i < path.length; i++) {
-        if (!Attack.securePosition(path[i].x, path[i].y, 35, 250))
-          return false;
+        this.secure(path[i].x, path[i].y, 35);
+//        if (!Attack.securePosition(path[i].x, path[i].y, 35, 250))
+//          return false;
       }
       return true;
     };

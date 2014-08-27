@@ -8,16 +8,50 @@ include("PowerRush.js");
 
 PowerRush.rushee = function() {
   this.grabItem = function(id, chestid) {
-    if (me.getItem(id)) return true;
     if (chestid) {
       var chest = getUnit(2, chestid);
       if (chest) Misc.openChest(chest);
     }
+    if (me.getItem(id)) return true;
     for (var i = 0; i < 12; i++) {
       var item = getUnit(4, id, 3);
       if (item && Pickit.pickItem(item) && (id == 523 || me.getItem(id)))
         return true;
+      if (me.mode == 17)
+        return false;
       delay(500);
+    }
+    return false;
+  };
+  this.getCorpse = function(){
+    var corpse = getUnit(0, me.name, 17);
+    if (corpse) {
+      do {
+        if (getDistance(me, corpse) <= 15) {
+          Pather.moveToUnit(corpse);
+          corpse.interact();
+          delay(300);
+        }
+      } while (corpse.getNext());
+    }
+  };
+  this.tryToGrabItem = function(id, chestid) {
+    for (var i = 0; i < 8; i++) {
+      if (i >= 4 && id != 523 && me.getItem(id))
+        return true;
+      if (!Pather.usePortal(null, this.rusher))
+        throw new Error("Failed to take rusher's portal");
+      delay(250);
+      this.getCorpse();
+      if (this.grabItem(id, chestid))
+        return true;
+      delay(250 + me.ping);
+      if (((!chestid || !getUnit(2, chestid) || getUnit(2, chestid).mode) && !getUnit(4, 552, 3)) || me.mode != 17)
+        return false;
+      me.revive();
+      while (!me.inTown)
+        delay(500);
+      Town.move("portalspot");
     }
     return false;
   };
@@ -99,13 +133,13 @@ PowerRush.rushee = function() {
   };
   this.checkQuest = function(quest) {
     switch (quest) {
-    case "den":       return !!me.getQuest(1, 0);
+    case "den":       return !!(me.getQuest(1, 0) || me.getQuest(1, 1));
     case "andariel":  return !!me.getQuest(7, 0);
 
-    case "radament":  return !!(me.getQuest(9, 0) || me.getQuest(9, 1)); // ?
+    case "radament":  return !!me.getQuest(9, 0); // make sure we talk to atma so we can pick up the book next time if we missed it
     case "cube":      return !!me.getItem(549);
-    case "amulet":    return !!(me.getQuest(14, 0) || me.getQuest(14, 3) || me.getItem(521));
-    case "staff":     return !!(me.getQuest(14, 0) || me.getQuest(14, 3) || me.getItem(92));
+    case "amulet":    return !!(me.getQuest(11, 0) && (me.getQuest(10, 0) || me.getItem(521) || me.getItem(91)));
+    case "staff":     return !!(me.getQuest(10, 0) || me.getItem(92) || me.getItem(91));
     case "summoner":  return !!me.getQuest(13, 0);
     case "duriel":    return !!(me.getQuest(14, 0) || me.getQuest(14, 3));
     case "jerhyn":    return !!me.getQuest(15, 0);
@@ -193,42 +227,41 @@ PowerRush.rushee = function() {
         throw new Error("Failed to return to town");
     }
     this.waitForChat(this.Phrases.RadamentBookEnter);
-    if (!Pather.usePortal(null, this.rusher))
-      throw new Error("Failed to take rusher's portal");
-    if (!this.grabItem(552) || !this.useItem(552))
-      D2Bot.printToConsole("Error in radament: failed to read Book of Skill");
+    if (!this.tryToGrabItem(552))
+      D2Bot.printToConsole("Error in radament: Failed to grab Book of Skill");
     this.waitForChat(this.Phrases.RadamentBookLeave);
     if (!this.toTown())
       throw new Error("Failed to return to town");
-    if (this.leader)
-      this.talkTo("atma");
+    this.useItem(552);
+    this.talkTo("atma");
     return true;
   };
 
   this.cube = function() {
     Town.move("portalspot");
     this.waitForChat(this.Phrases.CubeEnter);
-    if (!Pather.usePortal(null, this.rusher))
-      throw new Error("Failed to take rusher's portal");
-    this.grabItem(549, 354);
+    if (!this.tryToGrabItem(549, 354))
+      throw new Error("Failed to grab Horadric Cube");
     this.waitForChat(this.Phrases.CubeLeave);
     if (!this.toTown())
       throw new Error("Failed to return to town");
     return true;
   };
 
+  this.talkedToDrognan = false;
   this.amulet = function() {
     if (this.leader) {
       Town.move("portalspot");
       this.waitForChat(this.Phrases.AmuletEnter);
-      if (!Pather.usePortal(null, this.rusher))
-        throw new Error("Failed to take rusher's portal");
-      this.grabItem(521, 149);
+      if (!this.tryToGrabItem(521, 149))
+        throw new Error("Failed to grab amulet");
       this.waitForChat(this.Phrases.AmuletLeave);
       if (!this.toTown())
         throw new Error("Failed to return to town");
       delay(500);
-      return this.talkTo(NPC.Drognan);
+      if (this.talkTo(NPC.Drognan))
+        this.talkedToDrognan = true;
+      return true;
     } else {
       Town.move("cain");
       return this.waitForChat(this.Phrases.AmuletLeave);
@@ -239,29 +272,11 @@ PowerRush.rushee = function() {
     if (this.leader) {
       Town.move("portalspot");
       this.waitForChat(this.Phrases.StaffEnter);
-      if (!Pather.usePortal(null, this.rusher))
-        throw new Error("Failed to take rusher's portal");
-      this.grabItem(92, 356);
+      if (!this.tryToGrabItem(92, 356))
+        throw new Error("Failed to grab staff");
       this.waitForChat(this.Phrases.StaffLeave);
       if (!this.toTown())
         throw new Error("Failed to return to town");
-      delay(1000);
-      
-      var staff = me.getItem(92),
-          amulet = me.getItem(521);
-      if (!staff)
-        throw new Error("Staff shaft not found");
-      if (!amulet)
-        throw new Error("Amulet not found");
-      Storage.Cube.MoveTo(amulet);
-      Storage.Cube.MoveTo(staff);
-      Cubing.openCube();
-      transmute();
-      delay(750 + me.ping);
-      Cubing.emptyCube();
-      me.cancel();
-      if (!me.getItem(91))
-        throw new Error("Failed to cube staff");
       return true;
     } else {
       Town.move("cain");
@@ -271,6 +286,8 @@ PowerRush.rushee = function() {
 
   this.summoner = function() {
     if (this.leader) {
+      if (!me.getQuest(12, 2) && !this.talkedToDrognan)
+        this.talkTo(NPC.Drognan);
       Town.move("portalspot");
       this.waitForChat(this.Phrases.SummonerEnter);
       if (!Pather.usePortal(null, this.rusher))
@@ -280,6 +297,7 @@ PowerRush.rushee = function() {
         throw new Error("Failed to return to town");
       delay(1000);
     } else {
+      Town.move("cain");
       this.waitForChat(this.Phrases.SummonerLeave);
     }
     return this.talkTo(NPC.Cain, "cain");
@@ -288,39 +306,61 @@ PowerRush.rushee = function() {
   this.duriel = function() {
     Town.move("portalspot");
     if (this.leader) {
-      this.waitForChat(this.Phrases.DurielEnter);
-      while (true) {
-        if (!Pather.usePortal(null, this.rusher))
-          throw new Error("Failed to take rusher's portal");
-        var staff = me.getItem(91);
-        var orifice = getUnit(2, 152);
-        if (!staff) {
-          D2Bot.printToConsole("Staff not found, let's hope the door is already open");
-          break;
-        }
-        if (!orifice)
-          throw new Error("Orifice not found");
-        if (Misc.openChest(orifice) && staff.toCursor()) {
-          if (submitItem())
-            break;
-        }
-        if (me.mode == 17) {
-          D2Bot.printToConsole("Died while opening Duriel's chamber, trying again");
-          me.revive();
-          while (!me.inTown)
-            delay(500);
-          Town.move("portalspot");
-        } else {
-          throw new Error("Failed to open Duriel's chamber");
-        }
-      }
-      delay(750 + me.ping);
-      if (!this.toTown())
-        throw new Error("Failed to return to town");
-      if (me.itemoncursor) {
+      if (!me.getQuest(10, 0) && !me.getItem(91)) {
+        var staff = me.getItem(92),
+            amulet = me.getItem(521);
+        if (!staff)
+          throw new Error("Staff shaft not found");
+        if (!amulet)
+          throw new Error("Amulet not found");
+        Storage.Cube.MoveTo(amulet);
+        Storage.Cube.MoveTo(staff);
         Cubing.openCube();
-        delay(500);
+        transmute();
+        delay(750 + me.ping);
+        Cubing.emptyCube();
         me.cancel();
+        if (!me.getItem(91))
+          throw new Error("Failed to cube staff");
+      }
+
+      this.waitForChat(this.Phrases.DurielEnter);
+      if (!me.getQuest(10, 0)) {
+        while (true) {
+          if (!Pather.usePortal(null, this.rusher))
+            throw new Error("Failed to take rusher's portal");
+          delay(250);
+          this.getCorpse();
+          var staff = me.getItem(91);
+          var orifice = getUnit(2, 152);
+          if (!staff) {
+            D2Bot.printToConsole("Staff not found, let's hope the door is already open");
+            break;
+          }
+          if (!orifice)
+            throw new Error("Orifice not found");
+          if (Misc.openChest(orifice) && staff.toCursor()) {
+            if (submitItem())
+              break;
+          }
+          if (me.mode == 17) {
+            D2Bot.printToConsole("Died while opening Duriel's chamber, trying again");
+            me.revive();
+            while (!me.inTown)
+              delay(500);
+            Town.move("portalspot");
+          } else {
+            throw new Error("Failed to open Duriel's chamber");
+          }
+        }
+        delay(750 + me.ping);
+        if (!this.toTown())
+          throw new Error("Failed to return to town");
+        if (me.itemoncursor) {
+          Cubing.openCube();
+          delay(500);
+          me.cancel();
+        }
       }
 
       this.waitForChat(this.Phrases.DurielDead);
@@ -368,9 +408,8 @@ PowerRush.rushee = function() {
     if (this.leader) {
       Town.move("portalspot");
       this.waitForChat(this.Phrases.TomeEnter);
-      if (!Pather.usePortal(null, this.rusher))
-        throw new Error("Failed to take rusher's portal");
-      this.grabItem(548, 193);
+      if (!this.tryToGrabItem(548, 193))
+        throw new Error("Failed to grab tome");
       this.waitForChat(this.Phrases.TomeLeave);
       if (!this.toTown())
         throw new Error("Failed to return to town");
@@ -416,7 +455,9 @@ PowerRush.rushee = function() {
       this.waitForChat(this.Phrases.TravincalLeave);
       if (!this.toTown())
         throw new Error("Failed to return to town");
+      delay(500);
     } else {
+      Town.move("cain");
       this.waitForChat(this.Phrases.TravincalLeave);
     }
     return this.talkTo(NPC.Cain, "cain");
@@ -520,14 +561,24 @@ PowerRush.rushee = function() {
       this.waitForChat(this.Phrases.AnyaEnter);
       if (!this.talkTo(NPC.Malah))
         throw new Error("Failed to talk to Malah");
-      if (!Pather.usePortal(null, this.rusher))
-        throw new Error("Failed to take rusher's portal");
-      delay(250);
-      var anya = getUnit(2, 558);
-      if (!Pather.moveToUnit(anya) || !anya.interact())
-        throw new Error("Failed to talk to Anya");
+      for (var i = 0; i < 8; i++) {
+        if (!Pather.usePortal(null, this.rusher))
+          throw new Error("Failed to take rusher's portal");
+        delay(250);
+        this.getCorpse();
+        var anya = getUnit(2, 558);
+        if (Pather.moveToUnit(anya) && anya.interact()) {
+          me.cancel();
+          break;
+        }
+        if (me.mode != 17)
+          throw new Error("Failed to talk to Anya");
+        me.revive();
+        while (!me.inTown)
+          delay(500);
+        Town.move("portalspot");
+      }
       this.waitForChat(this.Phrases.AnyaLeave);
-      me.cancel();
       if (!this.toTown())
         throw new Error("Failed to return to town");
       delay(500);
@@ -666,8 +717,7 @@ PowerRush.rushee = function() {
         }
       }
       if (this.leader && this.rusher != this.getRusher()) {
-        this.resetQuests();
-        say("start " + this.questQueue[0]);
+        say("start " + quest);
       }
     }
     this.rusher = this.getRusher();

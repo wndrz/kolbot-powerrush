@@ -12,10 +12,10 @@
 
 var PowerRush = {
   Rushers: ["Rivvy", "Najka", "rivhammer"], // array of valid rusher names, case sensitive
-  RusheeCount: 1, // number of rushees to wait for
+  RusheeCount: 3, // number of rushees to wait for
   RusheeLeader: "RushLeader", // profile of the player that will do the quests, case sensitive
   Bumper: null, // bumper name; null for wsk walk
-  RushMode: "fullwps", // quick, full, wps, fullwps
+  RushMode: "quick", // quick, full, wps, fullwps
   SwitchDifficulty: true, // Restart rushee profiles at the end of act 5 to skip the Congratulations and unbug the difficulty button
                           // Make sure to set leader profile difficulty to "Highest"
 
